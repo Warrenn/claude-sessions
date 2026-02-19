@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate script syntax
+        run: python -m py_compile claude_sessions.py
+
+      - name: Create release artifact
+        run: |
+          mkdir -p dist
+          cp claude_sessions.py dist/claude-sessions
+          chmod +x dist/claude-sessions
+          cp install.sh dist/install.sh
+          chmod +x dist/install.sh
+          tar -czf dist/claude-sessions-${{ github.ref_name }}.tar.gz -C dist claude-sessions install.sh
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/claude-sessions-${{ github.ref_name }}.tar.gz
+            dist/claude-sessions
+            dist/install.sh
